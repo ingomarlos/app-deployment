@@ -1,0 +1,11 @@
+replicaCount: 1
+image:
+  repository: ingomarlos/go-movies
+  pullPolicy: IfNotPresent
+  tag: "latest"
+service:
+  type: ClusterIP
+  port: 8080
+ingress:
+  enabled: false
+resources: {}
