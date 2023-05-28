@@ -19,7 +19,7 @@ spec:
     kind: Application
   project: default
   source:
-    path: apps/deploy
+    path: root-app/apps
     repoURL: https://github.com/ingomarlos/app-deployment.git
     targetRevision: main
     directory:
