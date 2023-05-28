@@ -9,8 +9,8 @@ spec:
     server: "https://kubernetes.default.svc"
   project: default
   source: 
-    path: guestbook
-    repoURL: "https://github.com/mabusaa/argocd-example-apps.git"
+    path: apps/deploy
+    repoURL: "https://github.com/ingomarlos/app-deployment.git"
     targetRevision: master
   syncPolicy:
     syncOptions:
