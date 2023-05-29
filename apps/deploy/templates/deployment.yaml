@@ -17,6 +17,17 @@ spec:
       - name: go-movies
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: ENVIRONMENT
+          valueFrom:
+            secretKeyRef:
+              name: environment
+              key: ENVIRONMENT
+        - name: TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: token
+              key: TOKEN
         ports:
         - name: http
           containerPort: 8080
