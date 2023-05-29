@@ -5,3 +5,4 @@ Then push to your registry of choice.
 The available endpoints are:
 /health
 /movies
+/stress
