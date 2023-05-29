@@ -26,7 +26,7 @@ kubernetes_objects = [
       }
     }
     
-# %{ endfor ~}
+ %{ endfor ~}
 
 #
 # AWS SECRETS MANAGER SECRET STORE FOR K8S WILL BE CREATE IN THIS FILE
