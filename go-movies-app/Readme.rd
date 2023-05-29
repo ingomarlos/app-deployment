@@ -1,2 +1,3 @@
-# Compiling the app
-CGO_ENABLED=0 go build movies.go
+# To execute the go app you first need to build the image
+docker build -t go-app .
+Then push to your registry of choice.
