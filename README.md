@@ -1,6 +1,6 @@
 # Folder structure
 
-# app/
+# app
  - Contains the helm chart of the application
  
  # go-movies-app
