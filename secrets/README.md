@@ -3,7 +3,7 @@ The secrets are managed via External Secrets tool, I have integrated it with AWS
 To make it easier I have automated the management of secrets using Terraform template, all you need to declare the secrets details like below and terraform will create the AWS Secrets Manager resource, IAM Roles/Policies and the Kubernetes manifest for SecretStore and ExternalSecret kinds.
 
 # Example of a secret declaration:
-```json
+```
 kubernetes_objects = [
   {
     create_aws_secrets = true
