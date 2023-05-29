@@ -3,6 +3,6 @@ docker build -t go-app .
 Then push to your registry of choice.
 
 The available endpoints are:
-/health
-/movies
-/stress
+/health - used for health checks
+/movies - used to get a list of movies
+/stress - used to stress the app
