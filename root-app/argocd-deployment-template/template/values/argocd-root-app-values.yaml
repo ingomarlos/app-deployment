@@ -1,0 +1,51 @@
+
+# -- Deploy Argo CD Applications within this helm release
+# @default -- `[]` (See [values.yaml])
+## Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/
+applications:
+- name: root-app
+  namespace: argocd
+#   additionalLabels: {}
+#   additionalAnnotations: {}
+#   finalizers:
+#   - resources-finalizer.argocd.argoproj.io
+  project: root-project
+  source:
+    repoURL: https://github.com/ingomarlos/app-deployment.git
+    targetRevision: main
+    path: directory-of-apps
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+  info:
+  - name: url
+    value: https://argoproj.github.io/
+
+# -- Deploy Argo CD Projects within this helm release
+# @default -- `[]` (See [values.yaml])
+## Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/
+projects:
+- name: root-project
+  namespace: argocd
+#   additionalLabels: {}
+#   additionalAnnotations: {}
+#   finalizers:
+#   - resources-finalizer.argocd.argoproj.io
+  description: app of apps Project - go-app
+  sourceRepos:
+  - https://github.com/ingomarlos/app-deployment.git
+  destinations:
+  - namespace: argocd
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  orphanedResources:
+    warn: false
+
