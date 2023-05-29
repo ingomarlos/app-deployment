@@ -17,6 +17,138 @@ kubernetes_objects = [
 
 # Example of SecretStore and ExternalSecrets template manifest:
 ```
+
+%{ for item in create_namespaces ~}
+
+    resource "kubernetes_namespace" "${item}-ns" {
+      metadata {
+        name = "${item}"
+      }
+    }
+    
+# %{ endfor ~}
+
+#
+# AWS SECRETS MANAGER SECRET STORE FOR K8S WILL BE CREATE IN THIS FILE
+#
+
+%{ for item in kubernetes_objects ~}
+
+#
+# SERVICE ACCOUNT CREATION
+#
+###########
+    resource "kubernetes_service_account" "${item.service_account}" {
+      #depends_on = ["kubernetes_namespace.${item.namespace}-ns"]
+      metadata {
+        name        = "${item.service_account}"
+        namespace   = "${item.namespace}"
+      annotations = {
+        "eks.amazonaws.com/role-arn" = "$${aws_iam_role.secret_mng_${item.service_account}-${item.namespace}.arn}"
+    }
+      }
+    }
+
+    resource "aws_iam_role" "secret_mng_${item.service_account}-${item.namespace}" {
+      name = "${eks_cluster_name}-${substr(md5("${eks_cluster_name}-${item.namespace}-${item.service_account}"),0,5)}-iam-role"
+      tags = var.tags
+
+      assume_role_policy = jsonencode({
+        "Version" : "2012-10-17",
+        "Statement" : [
+          {
+            "Effect" : "Allow",
+            "Principal" : {
+              "Federated" : "$${data.terraform_remote_state.ACME_aws_shared_eks_data.outputs.oidc_provider_arn}"
+            },
+            "Action" : "sts:AssumeRoleWithWebIdentity",
+            "Condition" : {
+              "StringEquals" : {
+                "$${data.terraform_remote_state.ACME_aws_shared_eks_data.outputs.oidc_provider}:aud" : "sts.amazonaws.com",
+                "$${data.terraform_remote_state.ACME_aws_shared_eks_data.outputs.oidc_provider}:sub" : "system:serviceaccount:${item.namespace}:${item.service_account}"
+              }
+            }
+          }
+        ]
+      })
+    }
+
+
+########## properties secret_stores
+#
+## ONLY CREATES THIS BLOCK IF CREATE AWS SECRETS IS SET
+#
+    %{ if item.create_aws_secrets != false ~}
+
+      resource "aws_iam_policy" "secret_mng_${item.service_account}-${item.namespace}" {
+        name   = "${eks_cluster_name}-${substr(md5("${eks_cluster_name}-${item.namespace}-${item.service_account}"),0,5)}-iam-policy"
+        path   = "/"
+        tags = var.tags
+        policy = jsonencode({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                        "secretsmanager:GetResourcePolicy",
+                        "secretsmanager:GetSecretValue",
+                        "secretsmanager:DescribeSecret",
+                        "secretsmanager:ListSecretVersionIds"
+                    ],
+                    "Resource": [ %{ for store_keys, store_items in item.secret_stores } "$${resource.aws_secretsmanager_secret.secret_mng_${store_keys}-${item.namespace}.arn}",  %{ endfor } ]
+                },
+                {
+                    "Sid": "VisualEditor1",
+                    "Effect": "Allow",
+                    "Action": [
+                        "secretsmanager:GetRandomPassword",
+                        "secretsmanager:ListSecrets"
+                    ],
+                    "Resource": "*"
+                }
+            ]
+        })
+      }
+
+      resource "aws_iam_role_policy_attachment" "secret_mng_${item.service_account}-${item.namespace}" {
+        role       = aws_iam_role.secret_mng_${item.service_account}-${item.namespace}.name
+        policy_arn = aws_iam_policy.secret_mng_${item.service_account}-${item.namespace}.arn
+      }
+
+      resource "kubernetes_manifest" "secretstore_secrets_${item.service_account}-${item.namespace}" {
+        manifest = {
+          "apiVersion" = "external-secrets.io/v1beta1"
+          "kind" = "SecretStore"
+          "metadata" = {
+            "name" = "${item.service_account}-${item.namespace}"
+            "namespace" = "${item.namespace}"
+          }
+          "spec" = {
+            "provider" = {
+              "aws" = {
+                "auth" = {
+                  "jwt" = {
+                    "serviceAccountRef" = {
+                      "name" = "${item.service_account}"
+                    }
+                  }
+                }
+                "region" = "eu-central-1"
+                "service" = "SecretsManager"
+              }
+            }
+          }
+        }
+      }
+  # ENDS AWS SECRETS CREATION BLOCK
+  %{ endif ~}
+
+%{ endfor ~}
+
+
+
+
 %{ for item in kubernetes_objects ~}
   %{ for store_keys, store_items in item.secret_stores ~}
 
@@ -34,7 +166,6 @@ kubernetes_objects = [
             recovery_window_in_days = 0
             tags = var.tags
           }
-
 
           resource "kubernetes_manifest" "externalsecret_${store_keys}_${item.namespace}" {
             depends_on = [aws_secretsmanager_secret.secret_mng_${store_keys}-${item.namespace}]
@@ -86,4 +217,5 @@ kubernetes_objects = [
       %{ endif ~}
   %{ endfor ~}
 %{ endfor ~}
+
 ```
