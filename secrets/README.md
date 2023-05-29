@@ -35,11 +35,6 @@ kubernetes_objects = [
             tags = var.tags
           }
 
-        # ### to be deleted
-        #   resource "aws_secretsmanager_secret_version" "${store_keys}-${item.namespace}" {
-        #     secret_id     = aws_secretsmanager_secret.secret_mng_${store_keys}-${item.namespace}.id
-        #     secret_string = "{\"username\": \"prod\", \"password\": \"hello-world-updated17\"}"
-        #   }
 
           resource "kubernetes_manifest" "externalsecret_${store_keys}_${item.namespace}" {
             depends_on = [aws_secretsmanager_secret.secret_mng_${store_keys}-${item.namespace}]
